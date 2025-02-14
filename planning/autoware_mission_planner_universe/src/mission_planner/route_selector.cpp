@@ -289,6 +289,14 @@ ResponseStatus RouteSelector::resume_main_route(ClearRoute::Request::SharedPtr r
     return service_utils::sync_call(cli_clear_route_, req);
   }
 
+  // If MRM RouteState is arrived, clear the route for a new plan
+  if (mrm_.get_state() == RouteState::ARRIVED && main_.get_state() == RouteState::INTERRUPTED) {
+    const auto status = service_utils::sync_call(cli_clear_route_, req);
+    if (!status.success) {
+      return status;
+    }
+  }
+
   // Attempt to resume the main route if there is a planned route.
   if (const auto route = main_.get_route()) {
     const auto r = create_lanelet_request(route.value());
